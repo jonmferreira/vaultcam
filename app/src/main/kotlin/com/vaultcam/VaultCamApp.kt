@@ -2,6 +2,7 @@ package com.vaultcam
 
 import android.app.Application
 import com.vaultcam.service.BluetoothAlertService
+import com.vaultcam.service.FleetStreamingService
 import com.vaultcam.service.IrysService
 import com.vaultcam.service.LitProtocolService
 import com.vaultcam.service.PaymentService
@@ -48,5 +49,9 @@ class VaultCamApp : Application() {
 
     val wakuService: WakuService by lazy {
         WakuService(okHttpClient)
+    }
+
+    val fleetStreamingService: FleetStreamingService by lazy {
+        FleetStreamingService(this)
     }
 }

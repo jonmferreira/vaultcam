@@ -6,4 +6,5 @@ sealed class Screen(val route: String) {
     data object Recovery : Screen("recovery/{videoId}") {
         fun createRoute(videoId: String) = "recovery/$videoId"
     }
+    data object Fleet : Screen("fleet")
 }

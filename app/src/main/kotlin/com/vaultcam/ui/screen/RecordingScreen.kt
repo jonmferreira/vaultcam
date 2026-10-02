@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Business
 import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
@@ -57,7 +58,7 @@ import com.vaultcam.viewmodel.RecordingViewModel
 
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
-fun RecordingScreen(onOpenGallery: () -> Unit) {
+fun RecordingScreen(onOpenGallery: () -> Unit, onOpenFleet: () -> Unit = {}) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val vm: RecordingViewModel = viewModel(factory = RecordingViewModel.Factory(context))
@@ -126,8 +127,14 @@ fun RecordingScreen(onOpenGallery: () -> Unit) {
                 onClick = { vm.toggleRecording() }
             )
 
-            // Placeholder for symmetry
-            Box(modifier = Modifier.size(48.dp))
+            IconButton(onClick = onOpenFleet) {
+                Icon(
+                    Icons.Default.Business,
+                    contentDescription = "Frota",
+                    tint = Color.White,
+                    modifier = Modifier.size(36.dp)
+                )
+            }
         }
 
         // Impact alert dialog
