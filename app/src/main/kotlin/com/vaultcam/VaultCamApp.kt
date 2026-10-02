@@ -3,6 +3,7 @@ package com.vaultcam
 import android.app.Application
 import com.vaultcam.service.IrysService
 import com.vaultcam.service.LitProtocolService
+import com.vaultcam.service.PaymentService
 import com.vaultcam.service.WalletService
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
@@ -33,5 +34,9 @@ class VaultCamApp : Application() {
 
     val walletService: WalletService by lazy {
         WalletService(this)
+    }
+
+    val paymentService: PaymentService by lazy {
+        PaymentService(this, walletService)
     }
 }

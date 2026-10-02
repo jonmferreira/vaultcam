@@ -10,6 +10,7 @@ import com.vaultcam.data.model.VideoRecord
 import com.vaultcam.data.repository.VideoRepository
 import com.vaultcam.service.IrysService
 import com.vaultcam.service.LitProtocolService
+import com.vaultcam.service.PaymentService
 import com.vaultcam.service.WalletService
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -25,6 +26,7 @@ class RecoveryViewModel(
     private val litProtocolService: LitProtocolService,
     private val irysService: IrysService,
     private val walletService: WalletService,
+    private val paymentService: PaymentService,
     private val httpClient: OkHttpClient
 ) : ViewModel() {
 
@@ -128,6 +130,43 @@ class RecoveryViewModel(
         }
     }
 
+    fun payAndRecover(activity: ComponentActivity) {
+        val record = _uiState.value.record ?: return
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true, step = RecoveryStep.SIGNING)
+            paymentService.payForVideo(activity, record.id)
+                .onSuccess { paymentTxId ->
+                    val message = "VaultCam access ${record.id} payment $paymentTxId"
+                    walletService.connect(activity)
+                        .onSuccess { publicKey ->
+                            walletService.signMessage(activity, message)
+                                .onSuccess { signature ->
+                                    val authSig = walletService.buildLitAuthSig(publicKey, signature, message)
+                                    recoverVideo(authSig)
+                                }
+                                .onFailure {
+                                    _uiState.value = _uiState.value.copy(
+                                        isLoading = false, step = RecoveryStep.IDLE,
+                                        error = "Assinatura falhou: ${it.message}"
+                                    )
+                                }
+                        }
+                        .onFailure {
+                            _uiState.value = _uiState.value.copy(
+                                isLoading = false, step = RecoveryStep.IDLE,
+                                error = it.message
+                            )
+                        }
+                }
+                .onFailure {
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false, step = RecoveryStep.IDLE,
+                        error = "Pagamento cancelado: ${it.message}"
+                    )
+                }
+        }
+    }
+
     fun clearDecryptedVideo() {
         val path = _uiState.value.decryptedVideoPath
         path?.let { File(it).delete() }
@@ -149,6 +188,7 @@ class RecoveryViewModel(
                 litProtocolService = app.litProtocolService,
                 irysService = app.irysService,
                 walletService = app.walletService,
+                paymentService = app.paymentService,
                 httpClient = app.okHttpClient
             ) as T
         }

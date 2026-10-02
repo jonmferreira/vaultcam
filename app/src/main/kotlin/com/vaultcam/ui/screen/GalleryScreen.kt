@@ -42,6 +42,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.activity.ComponentActivity
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -59,6 +60,7 @@ import java.util.Locale
 @Composable
 fun GalleryScreen(onBack: () -> Unit, onRecover: (String) -> Unit) {
     val context = LocalContext.current
+    val activity = context as ComponentActivity
     val vm: GalleryViewModel = viewModel(factory = GalleryViewModel.Factory(context))
 
     val uiState by vm.uiState.collectAsState()
@@ -120,7 +122,7 @@ fun GalleryScreen(onBack: () -> Unit, onRecover: (String) -> Unit) {
                     VideoCard(
                         record = record,
                         isProcessing = uiState.activeOperationId == record.id,
-                        onUpload = { vm.encryptAndUpload(record, "", "") },
+                        onUpload = { vm.encryptAndUpload(record, activity) },
                         onDelete = { vm.deleteVideo(record) },
                         onPlay = { if (record.isUploaded) onRecover(record.id) }
                     )

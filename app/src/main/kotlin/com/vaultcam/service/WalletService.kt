@@ -73,7 +73,7 @@ class WalletService(private val context: Context) {
 
         when (result) {
             is TransactionResult.Success -> {
-                val sigBytes = result.successPayload?.messages?.first()?.signatures?.first()
+                val sigBytes = result.payload.messages.first().signatures.first()
                     ?: throw Exception("Assinatura vazia")
                 android.util.Base64.encodeToString(sigBytes, android.util.Base64.NO_WRAP)
             }

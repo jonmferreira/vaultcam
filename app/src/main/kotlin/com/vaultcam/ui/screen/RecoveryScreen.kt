@@ -13,8 +13,13 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.LockOpen
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.width
+import androidx.compose.material.icons.filled.Payment
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -134,14 +139,23 @@ fun RecoveryScreen(videoId: String, onBack: () -> Unit) {
                         Text(it, color = MaterialTheme.colorScheme.error)
                     }
 
-                    // Botão de recuperar — assina com wallet e descriptografa
                     val activity = LocalContext.current as ComponentActivity
+                    val hasIrysTx = uiState.record?.irysTransactionId != null
+
                     Button(
                         onClick = { vm.connectAndRecover(activity) },
-                        enabled = uiState.record?.irysTransactionId != null
+                        enabled = hasIrysTx
                     ) {
                         Icon(Icons.Default.LockOpen, null, Modifier.padding(end = 8.dp))
-                        Text("Assinar com wallet e recuperar")
+                        Text("Assinar com wallet (owner)")
+                    }
+
+                    OutlinedButton(
+                        onClick = { vm.payAndRecover(activity) },
+                        enabled = hasIrysTx
+                    ) {
+                        Icon(Icons.Default.Payment, null, Modifier.padding(end = 8.dp))
+                        Text("Pagar 0.10 USDC e acessar")
                     }
                 }
             }
