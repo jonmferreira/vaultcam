@@ -1,0 +1,4 @@
+-keep class com.vaultcam.data.model.** { *; }
+-keep class com.solanamobile.mobilewalletadapter.** { *; }
+-dontwarn io.livekit.**
+-dontwarn io.getstream.**

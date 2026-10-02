@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "android-studio": {
+      "command": "C:\\Users\\domai\\AppData\\Local\\Microsoft\\WinGet\\Packages\\astral-sh.uv_Microsoft.Winget.Source_8wekyb3d8bbwe\\uv.exe",
+      "args": ["run", "--directory", "C:\\Users\\domai\\.claude\\mcps\\android-studio-mcp", "python", "-m", "android_studio_mcp"],
+      "env": {
+        "ASMCP_WORKSPACE_ROOTS": "C:\\Projetos"
+      }
+    }
+  }
+}
