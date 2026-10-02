@@ -10,6 +10,7 @@ import com.vaultcam.data.model.VideoRecord
 import com.vaultcam.data.repository.VideoRepository
 import com.vaultcam.service.IrysService
 import com.vaultcam.service.LitProtocolService
+import com.vaultcam.service.PaymentCurrency
 import com.vaultcam.service.PaymentService
 import com.vaultcam.service.WalletService
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -130,11 +131,11 @@ class RecoveryViewModel(
         }
     }
 
-    fun payAndRecover(activity: ComponentActivity) {
+    fun payAndRecover(activity: ComponentActivity, currency: PaymentCurrency = PaymentCurrency.USDC) {
         val record = _uiState.value.record ?: return
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, step = RecoveryStep.SIGNING)
-            paymentService.payForVideo(activity, record.id)
+            paymentService.payForVideo(activity, record.id, currency)
                 .onSuccess { paymentTxId ->
                     val message = "VaultCam access ${record.id} payment $paymentTxId"
                     walletService.connect(activity)

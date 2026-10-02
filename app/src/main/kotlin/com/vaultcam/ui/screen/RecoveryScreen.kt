@@ -17,9 +17,11 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.filled.Payment
+import androidx.compose.material.icons.filled.Token
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.OutlinedButton
+import com.vaultcam.service.PaymentCurrency
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -151,11 +153,19 @@ fun RecoveryScreen(videoId: String, onBack: () -> Unit) {
                     }
 
                     OutlinedButton(
-                        onClick = { vm.payAndRecover(activity) },
+                        onClick = { vm.payAndRecover(activity, PaymentCurrency.USDC) },
                         enabled = hasIrysTx
                     ) {
                         Icon(Icons.Default.Payment, null, Modifier.padding(end = 8.dp))
-                        Text("Pagar 0.10 USDC e acessar")
+                        Text("Pagar 0.10 USDC")
+                    }
+
+                    OutlinedButton(
+                        onClick = { vm.payAndRecover(activity, PaymentCurrency.SKR) },
+                        enabled = hasIrysTx
+                    ) {
+                        Icon(Icons.Default.Token, null, Modifier.padding(end = 8.dp))
+                        Text("Pagar 0.10 SKR")
                     }
                 }
             }

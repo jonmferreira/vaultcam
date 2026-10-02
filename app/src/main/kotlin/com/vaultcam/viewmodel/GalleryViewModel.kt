@@ -12,6 +12,7 @@ import com.vaultcam.data.repository.CreditRepository
 import com.vaultcam.data.repository.VideoRepository
 import com.vaultcam.service.IrysService
 import com.vaultcam.service.LitProtocolService
+import com.vaultcam.service.RewardService
 import com.vaultcam.service.WalletService
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -25,7 +26,8 @@ class GalleryViewModel(
     private val litProtocolService: LitProtocolService,
     private val irysService: IrysService,
     private val walletService: WalletService,
-    private val creditRepository: CreditRepository
+    private val creditRepository: CreditRepository,
+    private val rewardService: RewardService
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(GalleryUiState())
@@ -33,6 +35,7 @@ class GalleryViewModel(
 
     val videos = videoRepository.videos
     val credits = creditRepository.balance
+    val pendingSkr = rewardService.pendingSkr
 
     fun encryptAndUpload(record: VideoRecord, activity: ComponentActivity) {
         viewModelScope.launch {
@@ -120,9 +123,10 @@ class GalleryViewModel(
 
                 if (isNetworkShare) {
                     creditRepository.addCredits(CreditRepository.CREDITS_PER_CONTRIBUTION)
+                    rewardService.addReward(RewardService.SKR_PER_CONTRIBUTION)
                     _uiState.value = _uiState.value.copy(
                         activeOperationId = null,
-                        successMessage = "Contribuído para a rede! +${CreditRepository.CREDITS_PER_CONTRIBUTION} créditos"
+                        successMessage = "Contribuído! +${CreditRepository.CREDITS_PER_CONTRIBUTION} créditos · +${RewardService.SKR_PER_CONTRIBUTION} SKR pendente"
                     )
                 } else {
                     _uiState.value = _uiState.value.copy(
@@ -142,6 +146,20 @@ class GalleryViewModel(
                 activeOperationId = null,
                 error = "Criptografia falhou: ${it.message}"
             )
+        }
+    }
+
+    fun claimSkrRewards(activity: ComponentActivity) {
+        viewModelScope.launch {
+            rewardService.claimRewards(activity)
+                .onSuccess { txId ->
+                    _uiState.value = _uiState.value.copy(
+                        successMessage = "SKR resgatado! TX: ${txId.take(12)}..."
+                    )
+                }
+                .onFailure {
+                    _uiState.value = _uiState.value.copy(error = it.message)
+                }
         }
     }
 
@@ -167,7 +185,8 @@ class GalleryViewModel(
                 litProtocolService = app.litProtocolService,
                 irysService = app.irysService,
                 walletService = app.walletService,
-                creditRepository = CreditRepository(context)
+                creditRepository = CreditRepository(context),
+                rewardService = app.rewardService
             ) as T
         }
     }

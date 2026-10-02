@@ -16,12 +16,17 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material.icons.filled.CloudUpload
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.Token
 import androidx.compose.material.icons.filled.VideoFile
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import com.vaultcam.ui.theme.SolanaGreen
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -67,6 +72,7 @@ fun GalleryScreen(onBack: () -> Unit, onRecover: (String) -> Unit) {
     val uiState by vm.uiState.collectAsState()
     val videos by vm.videos.collectAsState(initial = emptyList())
     val credits by vm.credits.collectAsState(initial = 0)
+    val pendingSkr by vm.pendingSkr.collectAsState(initial = 0.0)
 
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -87,7 +93,10 @@ fun GalleryScreen(onBack: () -> Unit, onRecover: (String) -> Unit) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("VaultCam — ${videos.size}/10 · $credits créditos") },
+                title = {
+                    val skrLabel = if (pendingSkr > 0) " · ${"%.1f".format(pendingSkr)} SKR" else ""
+                    Text("VaultCam — ${videos.size}/10 · $credits créditos$skrLabel")
+                },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar")
@@ -97,6 +106,17 @@ fun GalleryScreen(onBack: () -> Unit, onRecover: (String) -> Unit) {
         },
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { padding ->
+        if (pendingSkr > 0) {
+            Button(
+                onClick = { vm.claimSkrRewards(activity) },
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = SolanaGreen)
+            ) {
+                Icon(Icons.Default.Token, null, Modifier.padding(end = 8.dp))
+                Text("Resgatar ${"%.2f".format(pendingSkr)} SKR para sua wallet")
+            }
+        }
+
         if (videos.isEmpty()) {
             Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
