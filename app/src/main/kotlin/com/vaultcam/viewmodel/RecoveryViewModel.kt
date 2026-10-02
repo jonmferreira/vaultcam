@@ -1,6 +1,7 @@
 package com.vaultcam.viewmodel
 
 import android.content.Context
+import androidx.activity.ComponentActivity
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -38,6 +39,33 @@ class RecoveryViewModel(
                 }
                 .onFailure {
                     _uiState.value = _uiState.value.copy(error = "Vídeo não encontrado")
+                }
+        }
+    }
+
+    fun connectAndRecover(activity: ComponentActivity) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true, step = RecoveryStep.SIGNING)
+            walletService.connect(activity)
+                .onSuccess { publicKey ->
+                    val message = "VaultCam access ${_uiState.value.record?.id}"
+                    walletService.signMessage(activity, message)
+                        .onSuccess { signature ->
+                            val authSig = walletService.buildLitAuthSig(publicKey, signature, message)
+                            recoverVideo(authSig)
+                        }
+                        .onFailure {
+                            _uiState.value = _uiState.value.copy(
+                                isLoading = false, step = RecoveryStep.IDLE,
+                                error = "Assinatura falhou: ${it.message}"
+                            )
+                        }
+                }
+                .onFailure {
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false, step = RecoveryStep.IDLE,
+                        error = it.message
+                    )
                 }
         }
     }
@@ -127,7 +155,7 @@ class RecoveryViewModel(
     }
 }
 
-enum class RecoveryStep { IDLE, DOWNLOADING, DECRYPTING, READY }
+enum class RecoveryStep { IDLE, SIGNING, DOWNLOADING, DECRYPTING, READY }
 
 data class RecoveryUiState(
     val record: VideoRecord? = null,

@@ -52,8 +52,8 @@ dependencies {
     implementation("androidx.camera:camera-video:$cameraxVersion")
     implementation("androidx.camera:camera-view:$cameraxVersion")
 
-    // Solana Mobile Wallet Adapter — TODO: reativar com versão correta
-    // implementation("com.solanamobile:mobile-wallet-adapter-clientlib-ktx:2.0.0")
+    // Solana Mobile Wallet Adapter 2.0
+    implementation("com.solanamobile:mobile-wallet-adapter-clientlib-ktx:2.0.3")
 
     // LiveKit (fleet live streaming)
     implementation("io.livekit:livekit-android:2.7.0")

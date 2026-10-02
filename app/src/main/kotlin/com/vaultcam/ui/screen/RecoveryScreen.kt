@@ -28,6 +28,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.activity.ComponentActivity
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -134,12 +135,9 @@ fun RecoveryScreen(videoId: String, onBack: () -> Unit) {
                     }
 
                     // Botão de recuperar — assina com wallet e descriptografa
+                    val activity = LocalContext.current as ComponentActivity
                     Button(
-                        onClick = {
-                            // TODO: Invocar WalletService.signMessage antes de chamar recoverVideo
-                            // Por ora usa authSig placeholder para demonstração do fluxo
-                            vm.recoverVideo(walletAuthSig = "demo-auth-sig")
-                        },
+                        onClick = { vm.connectAndRecover(activity) },
                         enabled = uiState.record?.irysTransactionId != null
                     ) {
                         Icon(Icons.Default.LockOpen, null, Modifier.padding(end = 8.dp))
@@ -152,6 +150,7 @@ fun RecoveryScreen(videoId: String, onBack: () -> Unit) {
 }
 
 private fun stepLabel(step: RecoveryStep) = when (step) {
+    RecoveryStep.SIGNING -> "Aguardando assinatura da wallet..."
     RecoveryStep.DOWNLOADING -> "Baixando do Irys..."
     RecoveryStep.DECRYPTING -> "Descriptografando via Lit Protocol..."
     RecoveryStep.READY -> "Pronto"
