@@ -8,6 +8,7 @@ import androidx.lifecycle.viewModelScope
 import com.vaultcam.VaultCamApp
 import com.vaultcam.data.model.VideoRecord
 import com.vaultcam.data.model.VideoStatus
+import com.vaultcam.data.repository.CreditRepository
 import com.vaultcam.data.repository.VideoRepository
 import com.vaultcam.service.IrysService
 import com.vaultcam.service.LitProtocolService
@@ -23,99 +24,124 @@ class GalleryViewModel(
     private val videoRepository: VideoRepository,
     private val litProtocolService: LitProtocolService,
     private val irysService: IrysService,
-    private val walletService: WalletService
+    private val walletService: WalletService,
+    private val creditRepository: CreditRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(GalleryUiState())
     val uiState: StateFlow<GalleryUiState> = _uiState.asStateFlow()
 
     val videos = videoRepository.videos
+    val credits = creditRepository.balance
 
     fun encryptAndUpload(record: VideoRecord, activity: ComponentActivity) {
         viewModelScope.launch {
-            val localPath = record.localPath ?: return@launch
-            val localFile = File(localPath)
-            if (!localFile.exists()) return@launch
-
             _uiState.value = _uiState.value.copy(activeOperationId = record.id)
+            encryptAndUploadInternal(record, activity)
+        }
+    }
 
-            // 1. Conectar wallet se necessário
-            val publicKey = walletService.getConnectedAddress()
-                ?: walletService.connect(activity).getOrElse {
-                    _uiState.value = _uiState.value.copy(
-                        activeOperationId = null,
-                        error = "Wallet: ${it.message}"
-                    )
-                    return@launch
-                }
+    fun shareWithNetwork(record: VideoRecord, activity: ComponentActivity) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(activeOperationId = record.id)
+            encryptAndUploadInternal(record, activity, isNetworkShare = true)
+        }
+    }
 
-            // 2. Assinar para autorizar upload
-            val signature = walletService.signMessage(
-                activity,
-                "VaultCam upload ${record.id}"
-            ).getOrElse {
+    private suspend fun encryptAndUploadInternal(
+        record: VideoRecord,
+        activity: ComponentActivity,
+        isNetworkShare: Boolean = false
+    ) {
+        val localPath = record.localPath ?: run {
+            _uiState.value = _uiState.value.copy(activeOperationId = null)
+            return
+        }
+        val localFile = File(localPath)
+        if (!localFile.exists()) {
+            _uiState.value = _uiState.value.copy(activeOperationId = null)
+            return
+        }
+
+        val publicKey = walletService.getConnectedAddress()
+            ?: walletService.connect(activity).getOrElse {
                 _uiState.value = _uiState.value.copy(
                     activeOperationId = null,
-                    error = "Assinatura cancelada"
+                    error = "Wallet: ${it.message}"
                 )
-                return@launch
+                return
             }
 
-            // 3. Criptografar
-            videoRepository.updateVideo(record.copy(status = VideoStatus.ENCRYPTING))
+        val signature = walletService.signMessage(
+            activity,
+            "VaultCam upload ${record.id}"
+        ).getOrElse {
+            _uiState.value = _uiState.value.copy(
+                activeOperationId = null,
+                error = "Assinatura cancelada"
+            )
+            return
+        }
 
-            litProtocolService.encryptFile(
-                inputFile = localFile,
-                ownerWalletAddress = publicKey,
-                irysTransactionId = record.id
-            ).onSuccess { encryptResult ->
+        videoRepository.updateVideo(record.copy(status = VideoStatus.ENCRYPTING))
 
+        litProtocolService.encryptFile(
+            inputFile = localFile,
+            ownerWalletAddress = publicKey,
+            irysTransactionId = record.id
+        ).onSuccess { encryptResult ->
+            videoRepository.updateVideo(
+                record.copy(
+                    sha256Hash = encryptResult.dataToEncryptHash,
+                    isEncrypted = true,
+                    status = VideoStatus.UPLOADING
+                )
+            )
+            irysService.uploadEncryptedVideo(
+                encryptedFile = File(encryptResult.encryptedFilePath),
+                ownerPublicKey = publicKey,
+                sha256Hash = encryptResult.dataToEncryptHash,
+                latitude = record.latitude,
+                longitude = record.longitude,
+                timestampMs = record.timestampMs,
+                walletSignature = signature
+            ).onSuccess { uploadResult ->
                 videoRepository.updateVideo(
                     record.copy(
-                        sha256Hash = encryptResult.dataToEncryptHash,
+                        irysTransactionId = uploadResult.transactionId,
+                        ownerPublicKey = publicKey,
                         isEncrypted = true,
-                        status = VideoStatus.UPLOADING
+                        isUploaded = true,
+                        status = VideoStatus.UPLOADED
                     )
                 )
+                localFile.delete()
+                File(encryptResult.encryptedFilePath).delete()
 
-                // 4. Upload para Irys
-                irysService.uploadEncryptedVideo(
-                    encryptedFile = File(encryptResult.encryptedFilePath),
-                    ownerPublicKey = publicKey,
-                    sha256Hash = encryptResult.dataToEncryptHash,
-                    latitude = record.latitude,
-                    longitude = record.longitude,
-                    timestampMs = record.timestampMs,
-                    walletSignature = signature
-                ).onSuccess { uploadResult ->
-                    videoRepository.updateVideo(
-                        record.copy(
-                            irysTransactionId = uploadResult.transactionId,
-                            ownerPublicKey = publicKey,
-                            isEncrypted = true,
-                            isUploaded = true,
-                            status = VideoStatus.UPLOADED
-                        )
+                if (isNetworkShare) {
+                    creditRepository.addCredits(CreditRepository.CREDITS_PER_CONTRIBUTION)
+                    _uiState.value = _uiState.value.copy(
+                        activeOperationId = null,
+                        successMessage = "Contribuído para a rede! +${CreditRepository.CREDITS_PER_CONTRIBUTION} créditos"
                     )
-                    localFile.delete()
-                    File(encryptResult.encryptedFilePath).delete()
+                } else {
                     _uiState.value = _uiState.value.copy(
                         activeOperationId = null,
                         successMessage = "Salvo no Irys: ${uploadResult.transactionId.take(12)}..."
                     )
-                }.onFailure {
-                    _uiState.value = _uiState.value.copy(
-                        activeOperationId = null,
-                        error = "Upload falhou: ${it.message}"
-                    )
                 }
             }.onFailure {
-                videoRepository.updateVideo(record.copy(status = VideoStatus.LOCAL))
                 _uiState.value = _uiState.value.copy(
                     activeOperationId = null,
-                    error = "Criptografia falhou: ${it.message}"
+                    error = "Upload falhou: ${it.message}"
                 )
             }
+        }.onFailure {
+            videoRepository.updateVideo(record.copy(status = VideoStatus.LOCAL))
+            _uiState.value = _uiState.value.copy(
+                activeOperationId = null,
+                error = "Criptografia falhou: ${it.message}"
+            )
         }
     }
 
@@ -140,7 +166,8 @@ class GalleryViewModel(
                 videoRepository = VideoRepository(context),
                 litProtocolService = app.litProtocolService,
                 irysService = app.irysService,
-                walletService = app.walletService
+                walletService = app.walletService,
+                creditRepository = CreditRepository(context)
             ) as T
         }
     }

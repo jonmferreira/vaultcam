@@ -1,9 +1,11 @@
 package com.vaultcam
 
 import android.app.Application
+import com.vaultcam.service.BluetoothAlertService
 import com.vaultcam.service.IrysService
 import com.vaultcam.service.LitProtocolService
 import com.vaultcam.service.PaymentService
+import com.vaultcam.service.WakuService
 import com.vaultcam.service.WalletService
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
@@ -38,5 +40,13 @@ class VaultCamApp : Application() {
 
     val paymentService: PaymentService by lazy {
         PaymentService(this, walletService)
+    }
+
+    val bluetoothAlertService: BluetoothAlertService by lazy {
+        BluetoothAlertService(this)
+    }
+
+    val wakuService: WakuService by lazy {
+        WakuService(okHttpClient)
     }
 }

@@ -20,6 +20,7 @@ import androidx.compose.material.icons.filled.CloudUpload
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.VideoFile
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -65,6 +66,7 @@ fun GalleryScreen(onBack: () -> Unit, onRecover: (String) -> Unit) {
 
     val uiState by vm.uiState.collectAsState()
     val videos by vm.videos.collectAsState(initial = emptyList())
+    val credits by vm.credits.collectAsState(initial = 0)
 
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -85,7 +87,7 @@ fun GalleryScreen(onBack: () -> Unit, onRecover: (String) -> Unit) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("VaultCam — ${videos.size}/10 vídeos") },
+                title = { Text("VaultCam — ${videos.size}/10 · $credits créditos") },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar")
@@ -123,6 +125,7 @@ fun GalleryScreen(onBack: () -> Unit, onRecover: (String) -> Unit) {
                         record = record,
                         isProcessing = uiState.activeOperationId == record.id,
                         onUpload = { vm.encryptAndUpload(record, activity) },
+                        onShareNetwork = { vm.shareWithNetwork(record, activity) },
                         onDelete = { vm.deleteVideo(record) },
                         onPlay = { if (record.isUploaded) onRecover(record.id) }
                     )
@@ -137,6 +140,7 @@ private fun VideoCard(
     record: VideoRecord,
     isProcessing: Boolean,
     onUpload: () -> Unit,
+    onShareNetwork: () -> Unit,
     onDelete: () -> Unit,
     onPlay: () -> Unit
 ) {
@@ -192,6 +196,11 @@ private fun VideoCard(
                     if (!record.isUploaded && !record.isLocked) {
                         IconButton(onClick = onUpload) {
                             Icon(Icons.Default.CloudUpload, "Upload", tint = SolanaGreen)
+                        }
+                    }
+                    if (record.isLocked && !record.isUploaded) {
+                        IconButton(onClick = onShareNetwork) {
+                            Icon(Icons.Default.Share, "Disponibilizar para rede", tint = LockedAmber)
                         }
                     }
                     if (!record.isLocked) {
