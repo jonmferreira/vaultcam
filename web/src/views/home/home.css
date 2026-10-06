@@ -1,0 +1,195 @@
+/* ── Hero ────────────────────────────────────────── */
+.hero-section {
+  padding-top: 96px;
+  padding-bottom: 80px;
+}
+.hero-content {
+  max-width: 720px;
+}
+.hero-title-accent {
+  color: var(--color-green);
+}
+.hero-subtitle {
+  margin-top: 20px;
+  max-width: 600px;
+}
+.hero-cta {
+  display: flex;
+  gap: 12px;
+  margin-top: 32px;
+  flex-wrap: wrap;
+}
+.hero-stats {
+  display: flex;
+  gap: 12px;
+  margin-top: 40px;
+  flex-wrap: wrap;
+}
+.hero-badge-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 32px;
+  flex-wrap: wrap;
+}
+
+/* ── Nav actions ────────────────────────────────── */
+.nav-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+/* ── Section header ─────────────────────────────── */
+.section-header {
+  margin-bottom: 40px;
+}
+.section-subtitle {
+  margin-top: 12px;
+  max-width: 560px;
+}
+
+/* ── Problem grid ───────────────────────────────── */
+.problem-grid {
+  margin-bottom: 24px;
+}
+.problem-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text);
+  margin-bottom: 16px;
+}
+.cost-comparison {
+  text-align: right;
+}
+
+/* ── Flow steps list ────────────────────────────── */
+.flow-list {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  margin-bottom: 24px;
+}
+.flow-step-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-text);
+  margin-bottom: 6px;
+}
+.flow-note {
+  margin-top: 8px;
+}
+
+/* ── Profile cards ──────────────────────────────── */
+.profile-card-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--color-text);
+  margin-bottom: 10px;
+}
+.profile-pricing {
+  margin-top: 16px;
+}
+
+/* ── Feature checklist groups ───────────────────── */
+.feature-group-label {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-label);
+  margin-bottom: 14px;
+}
+.status-note {
+  margin-top: 24px;
+}
+
+/* ── CTA section ────────────────────────────────── */
+.cta-section {
+  text-align: center;
+}
+.cta-subtitle {
+  margin-top: 16px;
+  margin-left: auto;
+  margin-right: auto;
+  max-width: 480px;
+}
+.cta-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin-top: 32px;
+  flex-wrap: wrap;
+}
+.cta-tags {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin-top: 20px;
+  flex-wrap: wrap;
+}
+
+/* ── Footer ─────────────────────────────────────── */
+.footer-inner {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 32px;
+  flex-wrap: wrap;
+}
+.footer-brand {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.footer-links {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.footer-link {
+  font-size: 13px;
+  color: var(--color-text-muted);
+  text-decoration: none;
+  transition: color 0.15s;
+}
+.footer-link:hover {
+  color: var(--color-text);
+}
+.footer-copy {
+  width: 100%;
+  text-align: right;
+  margin-top: 8px;
+}
+
+/* ── Responsive ─────────────────────────────────── */
+@media (max-width: 768px) {
+  .hero-section {
+    padding-top: 64px;
+  }
+  .hero-cta {
+    flex-direction: column;
+  }
+  .hero-stats {
+    gap: 8px;
+  }
+  .cost-bar {
+    flex-direction: column;
+    gap: 8px;
+  }
+  .cost-comparison {
+    text-align: left;
+  }
+  .footer-inner {
+    flex-direction: column;
+  }
+  .footer-copy {
+    text-align: left;
+  }
+  .nav-actions .btn-secondary {
+    display: none;
+  }
+}
