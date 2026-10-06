@@ -20,6 +20,8 @@ import com.vaultcam.service.ImpactDetectorService
 import com.vaultcam.service.IncidentAlert
 import com.vaultcam.service.RecordingState
 import com.vaultcam.service.WakuService
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -46,10 +48,15 @@ class RecordingViewModel(
 
     val recordingState = cameraService.recordingState
     val videos = videoRepository.videos
+    val currentGForce = impactDetector.currentGForce
+
+    private var timerJob: Job? = null
+    private var sosJob: Job? = null
 
     init {
         observeImpacts()
         observeRecordingState()
+        observeGForce()
     }
 
     fun bindCamera(lifecycleOwner: LifecycleOwner, previewView: PreviewView) {
@@ -61,12 +68,85 @@ class RecordingViewModel(
 
     fun toggleRecording() {
         when (cameraService.recordingState.value) {
-            is RecordingState.Recording -> cameraService.stopRecording()
+            is RecordingState.Recording -> {
+                cameraService.stopRecording()
+                timerJob?.cancel()
+                _uiState.value = _uiState.value.copy(elapsedSeconds = 0L)
+            }
             else -> {
                 val outputDir = videoRepository.getVideoDir()
                 cameraService.startRecording(outputDir) { file ->
                     onRecordingFinished(file)
                 }
+                startTimer()
+            }
+        }
+    }
+
+    private fun startTimer() {
+        timerJob?.cancel()
+        timerJob = viewModelScope.launch {
+            var seconds = 0L
+            while (true) {
+                delay(1_000)
+                seconds++
+                _uiState.value = _uiState.value.copy(elapsedSeconds = seconds)
+            }
+        }
+    }
+
+    fun manualLockAndSync() {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isSyncing = true)
+            val list = videoRepository.videos.first()
+            val latest = list.filter { !it.isLocked }.maxByOrNull { it.timestampMs }
+            latest?.let {
+                videoRepository.updateVideo(it.copy(isLocked = true))
+            }
+            _uiState.value = _uiState.value.copy(isSyncing = false, syncSuccess = true)
+        }
+    }
+
+    fun manualAlertNetwork() {
+        viewModelScope.launch {
+            val location = getLastLocation()
+            val alert = IncidentAlert(
+                timestampMs = System.currentTimeMillis(),
+                latitude = location?.latitude,
+                longitude = location?.longitude,
+                gForce = 0f
+            )
+            bluetoothAlertService.broadcastIncident(alert)
+            runCatching { wakuService.publishIncident(alert) }
+            lockRecentVideos()
+        }
+    }
+
+    fun manualSOS() {
+        manualAlertNetwork()
+        sosJob?.cancel()
+        sosJob = viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isSosActive = true)
+            while (true) {
+                val location = getLastLocation()
+                if (location != null) {
+                    runCatching { wakuService.publishLocation(location.latitude, location.longitude) }
+                }
+                delay(10_000)
+            }
+        }
+    }
+
+    fun stopSOS() {
+        sosJob?.cancel()
+        sosJob = null
+        _uiState.value = _uiState.value.copy(isSosActive = false)
+    }
+
+    private fun observeGForce() {
+        viewModelScope.launch {
+            impactDetector.currentGForce.collectLatest { gForce ->
+                _uiState.value = _uiState.value.copy(currentGForce = gForce)
             }
         }
     }
@@ -157,6 +237,8 @@ class RecordingViewModel(
 
     override fun onCleared() {
         super.onCleared()
+        timerJob?.cancel()
+        sosJob?.cancel()
         cameraService.release()
         impactDetector.stopListening()
         bluetoothAlertService.stopScanningForAlerts()
@@ -184,5 +266,11 @@ data class RecordingUiState(
     val impactDetected: Boolean = false,
     val lastImpactGForce: Float? = null,
     val lastSavedVideoId: String? = null,
-    val error: String? = null
+    val error: String? = null,
+    val elapsedSeconds: Long = 0L,
+    val currentGForce: Float = 0f,
+    val gpsActive: Boolean = false,
+    val isSosActive: Boolean = false,
+    val isSyncing: Boolean = false,
+    val syncSuccess: Boolean = false
 )

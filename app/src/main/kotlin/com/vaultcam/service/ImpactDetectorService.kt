@@ -6,8 +6,11 @@ import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlin.math.sqrt
 
 /**
@@ -27,6 +30,9 @@ class ImpactDetectorService(context: Context) : SensorEventListener {
 
     private val _impacts = MutableSharedFlow<ImpactEvent>(extraBufferCapacity = 10)
     val impacts: SharedFlow<ImpactEvent> = _impacts.asSharedFlow()
+
+    private val _currentGForce = MutableStateFlow(0f)
+    val currentGForce: StateFlow<Float> = _currentGForce.asStateFlow()
 
     private var lastImpactMs = 0L
     private var isListening = false
@@ -53,6 +59,7 @@ class ImpactDetectorService(context: Context) : SensorEventListener {
         val z = event.values[2]
         val magnitude = sqrt(x * x + y * y + z * z)
         val gForce = magnitude / GRAVITY
+        _currentGForce.value = gForce
 
         val now = System.currentTimeMillis()
         if (gForce >= IMPACT_THRESHOLD_G && (now - lastImpactMs) > COOLDOWN_MS) {

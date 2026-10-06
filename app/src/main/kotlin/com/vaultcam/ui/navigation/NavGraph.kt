@@ -8,6 +8,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.vaultcam.ui.screen.FleetScreen
 import com.vaultcam.ui.screen.GalleryScreen
+import com.vaultcam.ui.screen.HomeScreen
 import com.vaultcam.ui.screen.RecordingScreen
 import com.vaultcam.ui.screen.RecoveryScreen
 
@@ -17,10 +18,19 @@ fun VaultCamNavGraph() {
 
     NavHost(
         navController = navController,
-        startDestination = Screen.Recording.route
+        startDestination = Screen.Home.route
     ) {
+        composable(Screen.Home.route) {
+            HomeScreen(
+                onStartMonitoring = { navController.navigate(Screen.Recording.route) },
+                onOpenGallery = { navController.navigate(Screen.Gallery.route) },
+                onRecover = { videoId -> navController.navigate(Screen.Recovery.createRoute(videoId)) }
+            )
+        }
+
         composable(Screen.Recording.route) {
             RecordingScreen(
+                onBack = { navController.popBackStack() },
                 onOpenGallery = { navController.navigate(Screen.Gallery.route) },
                 onOpenFleet = { navController.navigate(Screen.Fleet.route) }
             )
