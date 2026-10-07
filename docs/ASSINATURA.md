@@ -6,19 +6,44 @@ Este guia é só para o APK **release assinado** (`assembleRelease`).
 > **Regra de ouro:** o keystore (`.jks`) e as senhas **nunca** vão para o git. O repositório é
 > público. O `.gitignore` já bloqueia `keystore/`, `*.jks`, `*.keystore` e `keystore.properties`.
 
-## O que você precisa ter em mãos
+## Passo 0 — Gerar a sua chave (uma única vez)
 
-| Item | Valor atual |
+Gere a chave na **sua máquina**, para que a senha nunca passe por chat nem por repositório.
+No Windows, o `keytool` vem junto com o Android Studio. No PowerShell, na pasta do projeto:
+
+```powershell
+mkdir keystore
+& "C:\Program Files\Android\Android Studio\jbr\bin\keytool.exe" -genkeypair -v `
+  -keystore keystore\vaultcam-release.jks -alias vaultcam `
+  -keyalg RSA -keysize 4096 -validity 10000
+```
+
+(Se o Android Studio estiver em outra pasta, ajuste o caminho. Em Linux/macOS basta `keytool`.)
+
+O comando pergunta:
+- **Senha do keystore:** escolha uma forte e anote no gerenciador de senhas.
+- **Nome, organização, cidade, etc.:** pode preencher com o que quiser (ex.: seu nome ou VaultCam).
+- **Senha da chave:** aperte Enter para usar a mesma do keystore. O formato atual (PKCS12) exige
+  que as duas sejam iguais.
+
+Depois, anote os valores que o resto do guia usa:
+
+| Item | Valor |
 |---|---|
-| Arquivo do keystore | `vaultcam-release.jks` |
-| Alias da chave | `vaultcam` |
-| Senha do keystore | está no `keystore.properties` que foi enviado a você |
+| Arquivo do keystore | `keystore/vaultcam-release.jks` |
+| Alias da chave | `vaultcam` (o que você passou em `-alias`) |
+| Senha do keystore | a que você escolheu |
 | Senha da chave | a mesma do keystore |
-| SHA-256 do certificado | `DF:6E:8E:C6:F5:3E:DA:E7:32:42:A0:E2:A1:99:7C:C1:D2:B8:CE:99:7A:34:D9:F3:31:75:FC:0D:FD:5C:2D:5A` |
 
-**Faça backup** do `.jks` e do `keystore.properties` num lugar seguro (gerenciador de senhas ou
-pen drive). Se perder a chave, você não consegue publicar atualizações assinadas pela mesma
-identidade. O SHA-256 acima serve para conferir que é a mesma chave.
+Para ver o SHA-256 do certificado (útil para conferir depois que o APK está com a sua chave):
+
+```powershell
+& "C:\Program Files\Android\Android Studio\jbr\bin\keytool.exe" -list -v `
+  -keystore keystore\vaultcam-release.jks -alias vaultcam | Select-String "SHA256"
+```
+
+**Faça backup** do `.jks` e das senhas num lugar seguro (gerenciador de senhas ou pen drive).
+Se perder a chave, você não consegue publicar atualizações assinadas pela mesma identidade.
 
 ---
 
@@ -74,8 +99,8 @@ O APK fica em `app\build\outputs\apk\release\app-release.apk`.
 apksigner.bat verify --verbose --print-certs app\build\outputs\apk\release\app-release.apk
 ```
 
-Esperado: `Verifies`, `Verified using v2 scheme: true` e o SHA-256 do certificado igual ao da
-tabela acima. Se aparecer `CN=Android Debug`, ficou com a chave de debug.
+Esperado: `Verifies`, `Verified using v2 scheme: true` e o SHA-256 do certificado igual ao que
+o `keytool -list` mostrou no passo 0. Se aparecer `CN=Android Debug`, ficou com a chave de debug.
 
 ### 5. Instalar no aparelho
 
