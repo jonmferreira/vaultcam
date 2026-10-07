@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -19,8 +21,31 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    // Assinatura do release: lê keystore.properties (raiz, fora do git) ou variáveis de ambiente
+    // VAULTCAM_KEYSTORE / VAULTCAM_KEYSTORE_PASSWORD / VAULTCAM_KEY_ALIAS / VAULTCAM_KEY_PASSWORD.
+    // Sem nenhum dos dois, o release sai sem assinatura (build local de outros devs continua funcionando).
+    val keystoreProps = Properties().apply {
+        val f = rootProject.file("keystore.properties")
+        if (f.exists()) f.inputStream().use { load(it) }
+    }
+    fun signingValue(prop: String, env: String): String? =
+        keystoreProps.getProperty(prop) ?: System.getenv(env)
+
+    val releaseKeystore = signingValue("storeFile", "VAULTCAM_KEYSTORE")
+    signingConfigs {
+        if (releaseKeystore != null) {
+            create("release") {
+                storeFile = rootProject.file(releaseKeystore)
+                storePassword = signingValue("storePassword", "VAULTCAM_KEYSTORE_PASSWORD")
+                keyAlias = signingValue("keyAlias", "VAULTCAM_KEY_ALIAS")
+                keyPassword = signingValue("keyPassword", "VAULTCAM_KEY_PASSWORD")
+            }
+        }
+    }
+
     buildTypes {
         release {
+            signingConfigs.findByName("release")?.let { signingConfig = it }
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),

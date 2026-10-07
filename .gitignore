@@ -6,3 +6,9 @@ local.properties
 *.iml
 *.hprof
 app/build/
+
+# Assinatura (nunca commitar chaves)
+keystore/
+keystore.properties
+*.jks
+*.keystore
