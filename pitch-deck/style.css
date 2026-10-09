@@ -1,0 +1,133 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+:root {
+  --slidev-theme-primary: #8b5cf6;
+  --slidev-font-sans: 'Inter', system-ui, sans-serif;
+}
+
+.slidev-layout {
+  background: #07090f !important;
+  color: #fff !important;
+  font-family: 'Inter', system-ui, sans-serif !important;
+}
+
+.slidev-layout h1,
+.slidev-layout h2,
+.slidev-layout h3 {
+  color: #fff !important;
+  font-family: 'Inter', system-ui, sans-serif !important;
+}
+
+.slidev-layout p,
+.slidev-layout li,
+.slidev-layout td,
+.slidev-layout th {
+  font-family: 'Inter', system-ui, sans-serif !important;
+}
+
+/* Slide number */
+.slidev-page-no { color: rgba(255,255,255,0.3) !important; }
+
+/* Shared components */
+.accent       { color: #8b5cf6; }
+.accent-green { color: #10b981; }
+.accent-red   { color: #ef4444; }
+.accent-teal  { color: #2dd4bf; }
+
+.label-top {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.45);
+  margin-bottom: 20px;
+}
+
+.divider {
+  width: 100%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(139,92,246,0.5), transparent);
+  margin: 20px 0;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.14);
+  background: rgba(255,255,255,0.05);
+  font-size: 13px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.card {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 14px;
+  padding: 20px 22px;
+}
+
+.card-purple { border-color: rgba(139,92,246,0.4); background: rgba(139,92,246,0.06); }
+.card-green  { border-color: rgba(16,185,129,0.4); background: rgba(16,185,129,0.06); }
+.card-teal   { border-color: rgba(20,184,166,0.4); background: rgba(20,184,166,0.06); }
+.card-red    { border-color: rgba(239,68,68,0.35); background: rgba(239,68,68,0.05); }
+
+.hackathon-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 20px;
+  border-radius: 12px;
+  border: 1px solid rgba(20,184,166,0.45);
+  background: rgba(20,184,166,0.07);
+}
+
+.hack-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #2dd4bf;
+  white-space: nowrap;
+}
+
+/* Table */
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th {
+  color: rgba(255,255,255,0.45);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-align: left;
+  padding: 8px 12px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.02);
+}
+td {
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  color: rgba(255,255,255,0.85);
+  vertical-align: middle;
+}
+tr:last-child td { border-bottom: none; }
+tr.highlight td { background: rgba(139,92,246,0.08); }
+tr.highlight td:first-child { border-left: 2px solid #8b5cf6; }
+
+.check { color: #10b981; font-weight: 700; font-size: 16px; }
+.cross { color: rgba(255,255,255,0.25); font-size: 16px; }
+
+/* Compact table for competitive slide */
+.compact-table th { padding: 6px 12px; }
+.compact-table td { padding: 7px 12px; }

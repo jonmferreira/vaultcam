@@ -1,0 +1,14 @@
+{
+  "name": "pitch-deck",
+  "version": "1.0.0",
+  "description": "",
+  "scripts": {
+    "dev": "slidev slides.md --port 3030",
+    "build": "slidev build slides.md",
+    "export": "slidev export slides.md --format pdf --output vaultcam-pitch-deck.pdf"
+  },
+  "dependencies": {
+    "@slidev/cli": "^53.0.0",
+    "@slidev/theme-default": "^0.25.0"
+  }
+}

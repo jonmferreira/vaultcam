@@ -3,3 +3,5 @@ dist/
 dev-server.log
 screenshot-*.png
 *.local
+.env
+.env.*
