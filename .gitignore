@@ -6,3 +6,8 @@ local.properties
 *.iml
 *.hprof
 app/build/
+benchmark/
+
+# Assinatura — NUNCA commitar a chave nem as senhas
+*.jks
+keystore.properties

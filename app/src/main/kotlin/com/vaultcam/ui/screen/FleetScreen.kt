@@ -43,6 +43,28 @@ fun FleetScreen(onBack: () -> Unit) {
     val uiState by vm.uiState.collectAsState()
     val streamState by vm.streamState.collectAsState()
 
+    FleetScreenContent(
+        streamState = streamState,
+        isLoading = uiState.isLoading,
+        walletAddress = uiState.walletAddress,
+        error = uiState.error,
+        onBack = onBack,
+        onStartStream = { vm.startStream(activity) },
+        onStopStream = { vm.stopStream() }
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun FleetScreenContent(
+    streamState: StreamState,
+    isLoading: Boolean,
+    walletAddress: String?,
+    error: String?,
+    onBack: () -> Unit,
+    onStartStream: () -> Unit,
+    onStopStream: () -> Unit
+) {
     Scaffold(
         topBar = {
             TopAppBar(
@@ -80,14 +102,14 @@ fun FleetScreen(onBack: () -> Unit) {
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
-                        if (uiState.error != null) {
-                            Text(uiState.error!!, color = MaterialTheme.colorScheme.error)
+                        if (error != null) {
+                            Text(error, color = MaterialTheme.colorScheme.error)
                         }
-                        if (uiState.isLoading) {
+                        if (isLoading) {
                             CircularProgressIndicator(color = SolanaGreen)
                         } else {
                             Button(
-                                onClick = { vm.startStream(activity) },
+                                onClick = onStartStream,
                                 colors = ButtonDefaults.buttonColors(containerColor = SolanaGreen)
                             ) {
                                 Icon(Icons.Default.Videocam, null, Modifier.padding(end = 8.dp))
@@ -111,7 +133,7 @@ fun FleetScreen(onBack: () -> Unit) {
                         )
                         Text("Stream ativo", style = MaterialTheme.typography.headlineMedium, color = SolanaGreen)
                         Text(
-                            "Wallet: ${uiState.walletAddress?.take(16)}...",
+                            "Wallet: ${walletAddress?.take(16)}...",
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -120,7 +142,7 @@ fun FleetScreen(onBack: () -> Unit) {
                             style = MaterialTheme.typography.bodyMedium
                         )
                         Button(
-                            onClick = { vm.stopStream() },
+                            onClick = onStopStream,
                             colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
                         ) {
                             Icon(Icons.Default.VideocamOff, null, Modifier.padding(end = 8.dp))

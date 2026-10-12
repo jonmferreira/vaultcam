@@ -90,12 +90,49 @@ fun GalleryScreen(onBack: () -> Unit, onRecover: (String) -> Unit) {
         }
     }
 
+    GalleryScreenContent(
+        videos = videos,
+        credits = credits,
+        pendingSkr = pendingSkr,
+        activeOperationId = uiState.activeOperationId,
+        snackbarHostState = snackbarHostState,
+        onBack = onBack,
+        onClaimSkr = { vm.claimSkrRewards(activity) },
+        onUpload = { vm.encryptAndUpload(it, activity) },
+        onShareNetwork = { vm.shareWithNetwork(it, activity) },
+        onDelete = { vm.deleteVideo(it) },
+        onRecover = onRecover
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun GalleryScreenContent(
+    videos: List<VideoRecord>,
+    credits: Int,
+    pendingSkr: Double,
+    activeOperationId: String?,
+    snackbarHostState: SnackbarHostState,
+    onBack: () -> Unit,
+    onClaimSkr: () -> Unit,
+    onUpload: (VideoRecord) -> Unit,
+    onShareNetwork: (VideoRecord) -> Unit,
+    onDelete: (VideoRecord) -> Unit,
+    onRecover: (String) -> Unit
+) {
     Scaffold(
         topBar = {
             TopAppBar(
                 title = {
-                    val skrLabel = if (pendingSkr > 0) " · ${"%.1f".format(pendingSkr)} SKR" else ""
-                    Text("VaultCam — ${videos.size}/10 · $credits créditos$skrLabel")
+                    Column {
+                        Text("Galeria", style = MaterialTheme.typography.titleLarge)
+                        val skrLabel = if (pendingSkr > 0) " · ${"%.1f".format(pendingSkr)} SKR" else ""
+                        Text(
+                            "${videos.size}/10 vídeos · $credits créditos$skrLabel",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
@@ -106,49 +143,51 @@ fun GalleryScreen(onBack: () -> Unit, onRecover: (String) -> Unit) {
         },
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { padding ->
-        if (pendingSkr > 0) {
-            Button(
-                onClick = { vm.claimSkrRewards(activity) },
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = SolanaGreen)
-            ) {
-                Icon(Icons.Default.Token, null, Modifier.padding(end = 8.dp))
-                Text("Resgatar ${"%.2f".format(pendingSkr)} SKR para sua wallet")
-            }
-        }
-
-        if (videos.isEmpty()) {
-            Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Icon(
-                        Icons.Default.VideoFile,
-                        contentDescription = null,
-                        modifier = Modifier.size(64.dp),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Text(
-                        "Nenhum vídeo gravado",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(top = 12.dp)
-                    )
+        Column(modifier = Modifier.fillMaxSize().padding(padding)) {
+            if (pendingSkr > 0) {
+                Button(
+                    onClick = onClaimSkr,
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = SolanaGreen)
+                ) {
+                    Icon(Icons.Default.Token, null, Modifier.padding(end = 8.dp))
+                    Text("Resgatar ${"%.2f".format(pendingSkr)} SKR para sua wallet")
                 }
             }
-        } else {
-            LazyColumn(
-                modifier = Modifier.fillMaxSize().padding(padding),
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                items(videos, key = { it.id }) { record ->
-                    VideoCard(
-                        record = record,
-                        isProcessing = uiState.activeOperationId == record.id,
-                        onUpload = { vm.encryptAndUpload(record, activity) },
-                        onShareNetwork = { vm.shareWithNetwork(record, activity) },
-                        onDelete = { vm.deleteVideo(record) },
-                        onPlay = { if (record.isUploaded) onRecover(record.id) }
-                    )
+
+            if (videos.isEmpty()) {
+                Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(
+                            Icons.Default.VideoFile,
+                            contentDescription = null,
+                            modifier = Modifier.size(64.dp),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            "Nenhum vídeo gravado",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(top = 12.dp)
+                        )
+                    }
+                }
+            } else {
+                LazyColumn(
+                    modifier = Modifier.fillMaxWidth().weight(1f),
+                    contentPadding = PaddingValues(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    items(videos, key = { it.id }) { record ->
+                        VideoCard(
+                            record = record,
+                            isProcessing = activeOperationId == record.id,
+                            onUpload = { onUpload(record) },
+                            onShareNetwork = { onShareNetwork(record) },
+                            onDelete = { onDelete(record) },
+                            onPlay = { if (record.isUploaded) onRecover(record.id) }
+                        )
+                    }
                 }
             }
         }

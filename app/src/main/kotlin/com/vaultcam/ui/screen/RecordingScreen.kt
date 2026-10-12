@@ -150,121 +150,20 @@ fun RecordingScreen(
             }
 
             // Painel inferior — 45%
-            Column(
+            RecordingControlPanel(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .weight(0.45f)
-                    .background(MaterialTheme.colorScheme.surface)
-                    .padding(12.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                // Status row
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    StatusChip(label = "${videos.size} vídeos", tint = MaterialTheme.colorScheme.primary)
-                    StatusChip(
-                        label = "GPS",
-                        tint = SolanaGreen,
-                        icon = { Icon(Icons.Default.LocationOn, null, Modifier.size(12.dp), tint = SolanaGreen) }
-                    )
-                    if (uiState.isSosActive) {
-                        StatusChip(label = "SOS ATIVO", tint = RecordRed)
-                    }
-                }
-
-                // G-force bar
-                Column {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text("G-force", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Text(
-                            "${"%.1f".format(uiState.currentGForce)}G",
-                            style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = if (uiState.currentGForce > 1.5f) LockedAmber else MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                    LinearProgressIndicator(
-                        progress = { (uiState.currentGForce / 2.5f).coerceIn(0f, 1f) },
-                        modifier = Modifier.fillMaxWidth().height(6.dp).clip(RoundedCornerShape(3.dp)),
-                        color = when {
-                            uiState.currentGForce > 2.0f -> RecordRed
-                            uiState.currentGForce > 1.0f -> LockedAmber
-                            else -> SolanaGreen
-                        },
-                        trackColor = MaterialTheme.colorScheme.surfaceVariant
-                    )
-                }
-
-                // Alert combo buttons
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    FilledTonalButton(
-                        onClick = { vm.manualLockAndSync() },
-                        modifier = Modifier.weight(1f),
-                        enabled = !uiState.isSyncing
-                    ) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("⚡", style = MaterialTheme.typography.titleSmall)
-                            Text("Sincronizar", style = MaterialTheme.typography.labelSmall)
-                        }
-                    }
-                    FilledTonalButton(
-                        onClick = { vm.manualAlertNetwork() },
-                        modifier = Modifier.weight(1f),
-                        colors = ButtonDefaults.filledTonalButtonColors(
-                            containerColor = LockedAmber.copy(alpha = 0.15f),
-                            contentColor = LockedAmber
-                        )
-                    ) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("⚠️", style = MaterialTheme.typography.titleSmall)
-                            Text("Alertar rede", style = MaterialTheme.typography.labelSmall)
-                        }
-                    }
-                }
-
-                // SOS button
-                Button(
-                    onClick = { if (uiState.isSosActive) vm.stopSOS() else vm.manualSOS() },
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = if (uiState.isSosActive) RecordRed else RecordRed.copy(alpha = 0.85f)
-                    )
-                ) {
-                    Text(
-                        if (uiState.isSosActive) "🚨 SOS ATIVO — Toque para cancelar" else "🚨 SOS — Sinc + Rede + GPS ao vivo",
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-
-                // Record toggle
-                Button(
-                    onClick = { vm.toggleRecording() },
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = if (recordingState is RecordingState.Recording)
-                            MaterialTheme.colorScheme.surfaceVariant
-                        else
-                            MaterialTheme.colorScheme.primary
-                    )
-                ) {
-                    Text(
-                        if (recordingState is RecordingState.Recording) "⏹ Parar gravação" else "▶ Iniciar gravação",
-                        color = if (recordingState is RecordingState.Recording)
-                            MaterialTheme.colorScheme.onSurfaceVariant
-                        else
-                            MaterialTheme.colorScheme.onPrimary
-                    )
-                }
-            }
+                    .weight(0.45f),
+                videoCount = videos.size,
+                currentGForce = uiState.currentGForce,
+                isSosActive = uiState.isSosActive,
+                isSyncing = uiState.isSyncing,
+                isRecording = recordingState is RecordingState.Recording,
+                onSync = { vm.manualLockAndSync() },
+                onAlertNetwork = { vm.manualAlertNetwork() },
+                onToggleSos = { if (uiState.isSosActive) vm.stopSOS() else vm.manualSOS() },
+                onToggleRecording = { vm.toggleRecording() }
+            )
         }
 
         // Impact alert dialog
@@ -284,6 +183,134 @@ fun RecordingScreen(
                 dismissButton = {
                     TextButton(onClick = { vm.dismissImpactAlert() }) { Text("Fechar") }
                 }
+            )
+        }
+    }
+}
+
+@Composable
+fun RecordingControlPanel(
+    modifier: Modifier = Modifier,
+    videoCount: Int,
+    currentGForce: Float,
+    isSosActive: Boolean,
+    isSyncing: Boolean,
+    isRecording: Boolean,
+    onSync: () -> Unit,
+    onAlertNetwork: () -> Unit,
+    onToggleSos: () -> Unit,
+    onToggleRecording: () -> Unit
+) {
+    Column(
+        modifier = modifier
+            .background(MaterialTheme.colorScheme.surface)
+            .padding(12.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        // Status row
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            StatusChip(label = "$videoCount vídeos", tint = MaterialTheme.colorScheme.primary)
+            StatusChip(
+                label = "GPS",
+                tint = SolanaGreen,
+                icon = { Icon(Icons.Default.LocationOn, null, Modifier.size(12.dp), tint = SolanaGreen) }
+            )
+            if (isSosActive) {
+                StatusChip(label = "SOS ATIVO", tint = RecordRed)
+            }
+        }
+
+        // G-force bar
+        Column {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text("G-force", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(
+                    "${"%.1f".format(currentGForce)}G",
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = if (currentGForce > 1.5f) LockedAmber else MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            LinearProgressIndicator(
+                progress = { (currentGForce / 2.5f).coerceIn(0f, 1f) },
+                modifier = Modifier.fillMaxWidth().height(6.dp).clip(RoundedCornerShape(3.dp)),
+                color = when {
+                    currentGForce > 2.0f -> RecordRed
+                    currentGForce > 1.0f -> LockedAmber
+                    else -> SolanaGreen
+                },
+                trackColor = MaterialTheme.colorScheme.surfaceVariant
+            )
+        }
+
+        // Alert combo buttons
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            FilledTonalButton(
+                onClick = onSync,
+                modifier = Modifier.weight(1f),
+                enabled = !isSyncing
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text("⚡", style = MaterialTheme.typography.titleSmall)
+                    Text("Sincronizar", style = MaterialTheme.typography.labelSmall)
+                }
+            }
+            FilledTonalButton(
+                onClick = onAlertNetwork,
+                modifier = Modifier.weight(1f),
+                colors = ButtonDefaults.filledTonalButtonColors(
+                    containerColor = LockedAmber.copy(alpha = 0.15f),
+                    contentColor = LockedAmber
+                )
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text("⚠️", style = MaterialTheme.typography.titleSmall)
+                    Text("Alertar rede", style = MaterialTheme.typography.labelSmall)
+                }
+            }
+        }
+
+        // SOS button
+        Button(
+            onClick = onToggleSos,
+            modifier = Modifier.fillMaxWidth(),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = if (isSosActive) RecordRed else RecordRed.copy(alpha = 0.85f)
+            )
+        ) {
+            Text(
+                if (isSosActive) "🚨 SOS ATIVO — Toque para cancelar" else "🚨 SOS — Sinc + Rede + GPS ao vivo",
+                fontWeight = FontWeight.Bold
+            )
+        }
+
+        // Record toggle
+        Button(
+            onClick = onToggleRecording,
+            modifier = Modifier.fillMaxWidth(),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = if (isRecording)
+                    MaterialTheme.colorScheme.surfaceVariant
+                else
+                    MaterialTheme.colorScheme.primary
+            )
+        ) {
+            Text(
+                if (isRecording) "⏹ Parar gravação" else "▶ Iniciar gravação",
+                color = if (isRecording)
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                else
+                    MaterialTheme.colorScheme.onPrimary
             )
         }
     }

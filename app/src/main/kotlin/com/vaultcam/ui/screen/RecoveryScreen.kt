@@ -41,6 +41,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.viewmodel.compose.viewModel
 import android.net.Uri
+import com.vaultcam.data.model.VideoRecord
 import com.vaultcam.ui.theme.SolanaGreen
 import com.vaultcam.viewmodel.RecoveryStep
 import com.vaultcam.viewmodel.RecoveryViewModel
@@ -49,6 +50,7 @@ import com.vaultcam.viewmodel.RecoveryViewModel
 @Composable
 fun RecoveryScreen(videoId: String, onBack: () -> Unit) {
     val context = LocalContext.current
+    val activity = context as ComponentActivity
     val vm: RecoveryViewModel = viewModel(factory = RecoveryViewModel.Factory(context))
 
     val uiState by vm.uiState.collectAsState()
@@ -57,6 +59,34 @@ fun RecoveryScreen(videoId: String, onBack: () -> Unit) {
         vm.loadVideo(videoId)
     }
 
+    RecoveryScreenContent(
+        record = uiState.record,
+        isLoading = uiState.isLoading,
+        step = uiState.step,
+        decryptedVideoPath = uiState.decryptedVideoPath,
+        error = uiState.error,
+        onBack = onBack,
+        onRecoverOwner = { vm.connectAndRecover(activity) },
+        onPayUsdc = { vm.payAndRecover(activity, PaymentCurrency.USDC) },
+        onPaySkr = { vm.payAndRecover(activity, PaymentCurrency.SKR) },
+        onClearVideo = { vm.clearDecryptedVideo() }
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun RecoveryScreenContent(
+    record: VideoRecord?,
+    isLoading: Boolean,
+    step: RecoveryStep,
+    decryptedVideoPath: String?,
+    error: String?,
+    onBack: () -> Unit,
+    onRecoverOwner: () -> Unit,
+    onPayUsdc: () -> Unit,
+    onPaySkr: () -> Unit,
+    onClearVideo: () -> Unit
+) {
     Scaffold(
         topBar = {
             TopAppBar(
@@ -78,12 +108,12 @@ fun RecoveryScreen(videoId: String, onBack: () -> Unit) {
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             when {
-                uiState.decryptedVideoPath != null -> {
+                decryptedVideoPath != null -> {
                     // Reproduzir vídeo descriptografado
                     AndroidView(
                         factory = { ctx ->
                             VideoView(ctx).apply {
-                                setVideoURI(Uri.parse(uiState.decryptedVideoPath))
+                                setVideoURI(Uri.parse(decryptedVideoPath))
                                 start()
                             }
                         },
@@ -94,17 +124,17 @@ fun RecoveryScreen(videoId: String, onBack: () -> Unit) {
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                    Button(onClick = { vm.clearDecryptedVideo() }) {
+                    Button(onClick = onClearVideo) {
                         Text("Fechar vídeo")
                     }
                 }
 
-                uiState.isLoading -> {
+                isLoading -> {
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             CircularProgressIndicator(color = SolanaGreen)
                             Text(
-                                stepLabel(uiState.step),
+                                stepLabel(step),
                                 modifier = Modifier.padding(top = 16.dp),
                                 style = MaterialTheme.typography.bodyMedium
                             )
@@ -120,32 +150,31 @@ fun RecoveryScreen(videoId: String, onBack: () -> Unit) {
                         tint = MaterialTheme.colorScheme.primary
                     )
 
-                    uiState.record?.let { record ->
+                    record?.let { rec ->
                         Text(
                             "Vídeo criptografado com Lit Protocol",
                             style = MaterialTheme.typography.headlineMedium
                         )
                         Text(
-                            "Irys TX: ${record.irysTransactionId?.take(16)}...",
+                            "Irys TX: ${rec.irysTransactionId?.take(16)}...",
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Text(
-                            "Hash: ${record.sha256Hash?.take(16)}...",
+                            "Hash: ${rec.sha256Hash?.take(16)}...",
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
 
-                    uiState.error?.let {
+                    error?.let {
                         Text(it, color = MaterialTheme.colorScheme.error)
                     }
 
-                    val activity = LocalContext.current as ComponentActivity
-                    val hasIrysTx = uiState.record?.irysTransactionId != null
+                    val hasIrysTx = record?.irysTransactionId != null
 
                     Button(
-                        onClick = { vm.connectAndRecover(activity) },
+                        onClick = onRecoverOwner,
                         enabled = hasIrysTx
                     ) {
                         Icon(Icons.Default.LockOpen, null, Modifier.padding(end = 8.dp))
@@ -153,7 +182,7 @@ fun RecoveryScreen(videoId: String, onBack: () -> Unit) {
                     }
 
                     OutlinedButton(
-                        onClick = { vm.payAndRecover(activity, PaymentCurrency.USDC) },
+                        onClick = onPayUsdc,
                         enabled = hasIrysTx
                     ) {
                         Icon(Icons.Default.Payment, null, Modifier.padding(end = 8.dp))
@@ -161,7 +190,7 @@ fun RecoveryScreen(videoId: String, onBack: () -> Unit) {
                     }
 
                     OutlinedButton(
-                        onClick = { vm.payAndRecover(activity, PaymentCurrency.SKR) },
+                        onClick = onPaySkr,
                         enabled = hasIrysTx
                     ) {
                         Icon(Icons.Default.Token, null, Modifier.padding(end = 8.dp))

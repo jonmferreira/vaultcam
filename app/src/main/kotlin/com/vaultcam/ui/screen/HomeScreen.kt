@@ -92,6 +92,34 @@ fun HomeScreen(
         }
     }
 
+    HomeScreenContent(
+        videos = videos,
+        pendingSkr = pendingSkr,
+        pendingNetworkRequests = pendingNetworkRequests,
+        isClaimingSkr = uiState.isClaimingSkr,
+        snackbarHostState = snackbarHostState,
+        onClaimSkr = { vm.claimSkrRewards(activity) },
+        onDismissNetwork = { vm.dismissNetworkRequests() },
+        onStartMonitoring = onStartMonitoring,
+        onOpenGallery = onOpenGallery,
+        onRecover = onRecover
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun HomeScreenContent(
+    videos: List<VideoRecord>,
+    pendingSkr: Double,
+    pendingNetworkRequests: Int,
+    isClaimingSkr: Boolean,
+    snackbarHostState: SnackbarHostState,
+    onClaimSkr: () -> Unit,
+    onDismissNetwork: () -> Unit,
+    onStartMonitoring: () -> Unit,
+    onOpenGallery: () -> Unit,
+    onRecover: (String) -> Unit
+) {
     Scaffold(
         topBar = {
             TopAppBar(
@@ -146,9 +174,9 @@ fun HomeScreen(
                                 }
                             }
                             Button(
-                                onClick = { vm.claimSkrRewards(activity) },
+                                onClick = onClaimSkr,
                                 colors = ButtonDefaults.buttonColors(containerColor = Color.White),
-                                enabled = !uiState.isClaimingSkr
+                                enabled = !isClaimingSkr
                             ) {
                                 Text("Resgatar", color = SolanaGreen, fontWeight = FontWeight.Bold)
                             }
@@ -191,7 +219,7 @@ fun HomeScreen(
                                     )
                                 }
                             }
-                            TextButton(onClick = { vm.dismissNetworkRequests() }) {
+                            TextButton(onClick = onDismissNetwork) {
                                 Text("Ok", color = Color.White)
                             }
                         }
