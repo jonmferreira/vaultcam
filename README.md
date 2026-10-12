@@ -103,6 +103,82 @@ VaultCam transmite câmera ao vivo via LiveKit (sub-500ms). N câmeras simultân
 
 ---
 
+## Público-alvo e necessidade não atendida
+
+**Usuário primário: motorista individual e motorista de aplicativo.** É quem mais sofre
+com a assimetria de prova num acidente e quem transforma a rede em DePIN (cada celular
+vira um nó/testemunha). Seguradoras e equipes jurídicas são **compradores de evidência**
+(lado da demanda), não o usuário que instala o app. Frota é expansão B2B.
+
+| Dashcam existente | VaultCam |
+|---|---|
+| Grava em loop e **apaga** o acidente antigo | **Lock automático** no impacto antes de você reagir |
+| Vídeo no cartão SD / servidor que some | **Arweave permanente** — nem o dono deleta |
+| Você sozinho, um ângulo | **Rede P2P** — dispositivos vizinhos viram testemunhas (múltiplos ângulos) |
+| Sem cadeia de custódia | **Hash + GPS + timestamp on-chain** — prova auditável |
+
+A necessidade não atendida: **prova de acidente com cadeia de custódia verificável**, que
+nenhuma dashcam de hardware oferece.
+
+---
+
+## Arquitetura
+
+```
+┌─────────────────────────── App Android (Kotlin + Compose, MVVM) ──────────────────────────┐
+│  UI (Compose)        ViewModels (StateFlow)         Services                                │
+│  HomeScreen          HomeViewModel          CameraService (CameraX loop)                    │
+│  RecordingScreen     RecordingViewModel     ImpactDetectorService (G-force > 2.5G)          │
+│  GalleryScreen       GalleryViewModel       BluetoothAlertService (BLE 100m)                │
+│  RecoveryScreen      RecoveryViewModel      WakuService (P2P 500m)                          │
+│  FleetScreen         FleetViewModel         LitProtocolService (AES-256-GCM)                │
+│                                             IrysService (upload Arweave)                    │
+│                                             WalletService (MWA 2.0)                         │
+│                                             SolanaTokenService / PaymentService / RewardService │
+└────────────────────────────────────────────────────────────────────────────────────────────┘
+        │ gravação              │ impacto                │ wallet / SKR
+        ▼                       ▼                        ▼
+   MP4 local  ──encrypt──▶ Lit Protocol ──▶ Irys/Arweave (permanente)
+                                                  │
+   Impacto ──▶ BLE + Waku ──▶ incidente ──▶ hash SHA-256 + GPS + timestamp ──▶ Solana
+                                                  │
+   Pagamento/Recompensa ──▶ SPL Token Transfer ──▶ assina via MWA ──▶ Solana
+```
+
+Detalhes dos fluxos Solana/SKR (mint, pagamento, recompensa, resgate, ciclo da transação,
+erros, antifraude): **[docs/SKR-SOLANA.md](docs/SKR-SOLANA.md)**.
+
+---
+
+## Build & Run
+
+**Requisitos:** JDK 17+, Android SDK 35, dispositivo Android 8.0+ (API 26). A câmera dual
+e os sensores exigem **device físico** (não emulador).
+
+```bash
+# 1. clonar
+git clone https://github.com/jonmferreira/vaultcam.git
+cd vaultcam
+
+# 2. (opcional) assinatura release — crie keystore.properties na raiz:
+#    storeFile=vaultcam-release.jks
+#    storePassword=...
+#    keyAlias=vaultcam
+#    keyPassword=...
+
+# 3. build
+./gradlew assembleDebug        # APK debug
+./gradlew assembleRelease      # APK release assinado (precisa keystore.properties)
+
+# APK em: app/build/outputs/apk/<variant>/
+```
+
+**APK pronto:** [Releases v0.1.0](https://github.com/jonmferreira/vaultcam/releases/download/v0.1.0/app-release.apk)
+
+Instalação: ativar "fontes desconhecidas" no Android e abrir o `.apk`.
+
+---
+
 ## Stack
 
 | Camada | Tecnologia |
@@ -135,12 +211,15 @@ VaultCam transmite câmera ao vivo via LiveKit (sub-500ms). N câmeras simultân
 
 ## Submissão — CLOCK IN Hackathon
 
-**Deadline:** 08/out/2026  
-**Parceiro:** RadiantsDAO  
+**Deadline:** 12/out/2026 · **Parceiro:** RadiantsDAO  
 **Prize pool:** $125k USDC (top 10) + $10k SKR (integração criativa)
 
-- [ ] APK release assinado
-- [ ] Vídeo demo 3 min
-- [ ] Pitch video 3 min
-- [ ] Pitch deck 5 slides
-- [ ] Treasury wallet com SKR real (claim de rewards end-to-end)
+- [x] APK release assinado — [Releases v0.1.0](https://github.com/jonmferreira/vaultcam/releases/tag/v0.1.0)
+- [x] Repositório público e auditável (código Android + Solana + build)
+- [x] Vídeo demo
+- [x] Pitch deck 5 slides
+- [x] Documentação de arquitetura e mecânica SKR/Solana ([docs/SKR-SOLANA.md](docs/SKR-SOLANA.md))
+
+### Limitações conhecidas (transparência para os jurados)
+- Treasury e derivação de ATA são simplificadas para o hackathon — ver [docs/SKR-SOLANA.md §8](docs/SKR-SOLANA.md).
+- Serviços Lit/Irys/Waku via REST; a verificação on-chain do vínculo contribuição↔incidente (antifraude) é o próximo passo pós-hackathon.
